@@ -111,7 +111,7 @@
 
   // Decorative banner as an inline SVG so no external image dependency is needed.
   function banner(color, label) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="112"><rect width="400" height="112" fill="${color}"/><text x="20" y="64" font-family="Georgia" font-size="28" fill="#fff">${label}</text></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="112"><rect width="400" height="112" fill="${color}"/><text x="200" y="66" text-anchor="middle" font-family="Georgia" font-size="30" fill="#fff">${label}</text></svg>`;
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   }
   const fmt = (iso) => new Date(iso).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
