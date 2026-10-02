@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Events – Browse and Register</title>
+<style>
+  :root {
+    --ink: #1b2b2a; --paper: #f4f7f6; --card: #ffffff; --line: #b7c7c4;
+    --brand: #0f4c4a; --brand-ink: #ffffff; --warn: #8a2b0b; --ok: #14532d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 1rem/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; line-height: 1.2; }
+  .skip { position: absolute; left: -999px; }
+  .skip:focus { left: 1rem; top: 1rem; background: #fff; padding: .5rem 1rem; z-index: 10; }
+  body > header { background: var(--brand); color: var(--brand-ink); padding: 1.5rem 1rem; }
+  body > header h1 { margin: 0; font-size: 1.8rem; }
+  body > header p { margin: .25rem 0 0; max-width: 60ch; }
+  main, body > footer { max-width: 62rem; margin: 0 auto; padding: 1rem; }
+  main > section { margin: 2rem 0; }
+  .catalog { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+  .catalog > header { grid-column: 1 / -1; }
+  article { background: var(--card); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  article img { display: block; width: 100%; height: 7rem; object-fit: cover; }
+  article > div { padding: .75rem 1rem 1rem; }
+  article h3 { margin: 0 0 .25rem; font-size: 1.15rem; }
+  .meta { margin: 0; font-size: .92rem; }
+  .seats { font-weight: 600; color: var(--ok); }
+  .seats.full { color: var(--warn); }
+  form { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 1rem; max-width: 34rem; }
+  label { display: block; font-weight: 600; margin-top: .9rem; }
+  .hint { display: block; font-weight: 400; font-size: .9rem; }
+  input, select { width: 100%; padding: .6rem; margin-top: .25rem; font: inherit;
+                  border: 2px solid #5f7471; border-radius: 4px; background: #fff; color: var(--ink); }
+  input[aria-invalid="true"] { border-color: var(--warn); }
+  button { margin-top: 1.1rem; padding: .7rem 1.4rem; font: inherit; font-weight: 600; cursor: pointer;
+           background: var(--brand); color: var(--brand-ink); border: 2px solid var(--brand); border-radius: 4px; }
+  button:hover { background: #0a3534; }
+  :focus-visible { outline: 3px solid #b45309; outline-offset: 2px; }
+  .status { min-height: 1.5rem; margin-top: .8rem; font-weight: 600; }
+  .status.error { color: var(--warn); } .status.success { color: var(--ok); }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; background: var(--card); }
+  caption { text-align: left; padding: .5rem 0; font-weight: 600; }
+  th, td { border: 1px solid var(--line); padding: .5rem .7rem; text-align: left; }
+  th { background: #dce8e6; }
+  body > footer { border-top: 1px solid var(--line); font-size: .9rem; }
+  @media (prefers-reduced-motion: no-preference) { button { transition: background .15s; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<header>
+  <h1>Campus Events</h1>
+  <p>See what is coming up on campus, save your seat, and let organizers see who is attending.</p>
+</header>
+
+<main id="main">
+  <section id="catalog" class="catalog" aria-labelledby="catalog-title">
+    <header><h2 id="catalog-title">Upcoming events</h2></header>
+    <!-- Event <article> elements are rendered by the script below -->
+  </section>
+
+  <section aria-labelledby="register-title">
+    <h2 id="register-title">Register for an event</h2>
+    <form id="reg-form" novalidate>
+      <label for="fullName">Full name
+        <input id="fullName" name="fullName" type="text" autocomplete="name" required
+               aria-label="Full name" aria-required="true">
+      </label>
+      <label for="email">Student email
+        <span class="hint" id="email-hint">Use your school address ending in @univ.edu.ph</span>
+        <input id="email" name="email" type="email" autocomplete="email" required
+               aria-label="Student email address" aria-required="true" aria-describedby="email-hint">
+      </label>
+      <label for="eventId">Event
+        <select id="eventId" name="eventId" required aria-label="Choose an event" aria-required="true"></select>
+      </label>
+      <button type="submit">Reserve my seat</button>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section aria-labelledby="admin-title">
+    <h2 id="admin-title">Administrator: registered attendees</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Attendee table, scrollable">
+      <table>
+        <caption>Attendees registered in this session</caption>
+        <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Event</th></tr></thead>
+        <tbody id="attendees"><tr><td colspan="3">No registrations yet.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer><p>Online Campus Event Management System – group prototype. Data resets when the page reloads.</p></footer>
+
+<script>
+  // Sample data (stands in for GET /api/events). Replace with fetch() once the backend exists.
+  const events = [
+    { id: 1, title: "Intramurals Opening Ceremony", date: "2026-11-03T08:00", venue: "University Gym", capacity: 3, taken: 1, color: "#0f4c4a" },
+    { id: 2, title: "Cybersecurity Awareness Talk", date: "2026-11-10T13:30", venue: "Room 402, IT Building", capacity: 40, taken: 12, color: "#7c3a0a" },
+    { id: 3, title: "Outreach Day: Tree Planting", date: "2026-11-21T06:30", venue: "Campus Grounds", capacity: 25, taken: 25, color: "#14532d" }
+  ];
+  const attendees = [];
+  const EMAIL_RE = /^[A-Za-z0-9._%+-]+@univ\.edu\.ph$/i;
+  const $ = (id) => document.getElementById(id);
+
+  // Decorative banner as an inline SVG so no external image dependency is needed.
+  function banner(color, label) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="112"><rect width="400" height="112" fill="${color}"/><text x="20" y="64" font-family="Georgia" font-size="28" fill="#fff">${label}</text></svg>`;
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
+  const fmt = (iso) => new Date(iso).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
+  const left = (e) => e.capacity - e.taken;
+
+  function el(tag, props = {}, text) {
+    const n = document.createElement(tag);
+    Object.assign(n, props);
+    if (text !== undefined) n.textContent = text;   // textContent, never innerHTML -> no XSS
+    return n;
+  }
+
+  function renderCatalog() {
+    const section = $("catalog");
+    section.querySelectorAll("article").forEach((a) => a.remove());
+    events.forEach((e) => {
+      const art = el("article");
+      art.setAttribute("aria-labelledby", `ev-${e.id}`);
+      const img = el("img", { src: banner(e.color, new Date(e.date).toLocaleDateString("en-PH", { month: "short", day: "numeric" })),
+                              alt: `Banner for ${e.title}, held on ${fmt(e.date)}` });
+      const body = el("div");
+      body.append(el("h3", { id: `ev-${e.id}` }, e.title),
+                  el("p", { className: "meta" }, fmt(e.date)),
+                  el("p", { className: "meta" }, e.venue),
+                  el("p", { className: "meta seats" + (left(e) === 0 ? " full" : "") },
+                     left(e) === 0 ? "Fully booked" : `${left(e)} seats left`));
+      art.append(img, body);
+      section.append(art);
+    });
+    const sel = $("eventId");
+    sel.replaceChildren(el("option", { value: "" }, "Select an event"));
+    events.forEach((e) => {
+      sel.append(el("option", { value: e.id, disabled: left(e) === 0 }, `${e.title} (${left(e) === 0 ? "full" : left(e) + " left"})`));
+    });
+  }
+
+  function renderAttendees() {
+    if (!attendees.length) return;
+    $("attendees").replaceChildren(...attendees.map((a) => {
+      const tr = el("tr");
+      tr.append(el("td", {}, a.name), el("td", {}, a.email), el("td", {}, a.eventTitle));
+      return tr;
+    }));
+  }
+
+  function setStatus(msg, kind) { const s = $("status"); s.textContent = msg; s.className = "status " + kind; }
+
+  $("reg-form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const name = $("fullName").value.trim();
+    const email = $("email").value.trim();
+    const event = events.find((x) => String(x.id) === $("eventId").value);
+    $("email").removeAttribute("aria-invalid");
+
+    if (!name) { setStatus("Enter your full name.", "error"); return $("fullName").focus(); }
+    if (!EMAIL_RE.test(email)) {
+      $("email").setAttribute("aria-invalid", "true");
+      setStatus("Use a student email that ends in @univ.edu.ph.", "error"); return $("email").focus();
+    }
+    if (!event) { setStatus("Choose an event.", "error"); return $("eventId").focus(); }
+    if (left(event) === 0) return setStatus("That event is fully booked. Pick another one.", "error");
+    if (attendees.some((a) => a.email.toLowerCase() === email.toLowerCase() && a.eventId === event.id))
+      return setStatus("You are already registered for this event.", "error");
+
+    event.taken += 1;
+    attendees.push({ name, email, eventId: event.id, eventTitle: event.title });
+    renderCatalog(); renderAttendees();
+    $("reg-form").reset();
+    setStatus(`You're in! Seat reserved for ${event.title}.`, "success");
+  });
+
+  renderCatalog();
+</script>
+</body>
+</html>
